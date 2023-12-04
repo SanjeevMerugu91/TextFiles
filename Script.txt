@@ -1,0 +1,600 @@
+﻿
+
+baseLen = Instr(Environment.Value("TestDir"),"TestScripts")-2 
+Folderpath = mid(Environment.Value("TestDir"),1,baseLen)  
+
+TestDataPath=Folderpath+"\TestData\" 
+TestScriptPath=Folderpath+"\TestScripts\" 
+
+DataSheetPath=TestDataPath&"Driver.xls"
+FunctionLibPath=Folderpath+"\FunctionLibraries\" 
+ObjectRepositoriesPath= Folderpath+"\ObjectRepositories\"  
+
+
+'DataSheetPath="P:\UFT\Online\Regression\TestData\TestData.xlsx"
+'FunctionLibPath="P:\UFT\Online\Regression\FunctionLibraries\"
+'ObjectRepositoriesPath="P:\UFT\Online\Regression\ObjectRepositories\"
+DataSheetName="TC_04"
+	
+
+
+''Load Function Library
+LoadFunctionLibrary FunctionLibPath & "ReportResult.qfl"
+LoadFunctionLibrary FunctionLibPath & "DB_Utilities.qfl"
+LoadFunctionLibrary FunctionLibPath & "OnlineUtilities.qfl"
+LoadFunctionLibrary FunctionLibPath & "MailUtilities.qfl"
+LoadFunctionLibrary FunctionLibPath & "CRM_Utilities.qfl"
+LoadFunctionLibrary FunctionLibPath & "GDS_Utilities.qfl"
+
+
+'Load object repositories
+'RepositoriesCollection.Add(ObjectRepositoriesPath & "CRM.tsr")
+'RepositoriesCollection.Add(ObjectRepositoriesPath & "YopEmail.tsr")
+RepositoriesCollection.Add(ObjectRepositoriesPath & "Updated_Online_IL.tsr")
+'RepositoriesCollection.Add(ObjectRepositoriesPath & "GDS.tsr")
+'RepositoriesCollection.Add(ObjectRepositoriesPath & "VITA.tsr")
+RepositoriesCollection.Add(ObjectRepositoriesPath & "GenerateSIN.tsr")
+
+
+'LoadFunctionLibrary "P:\UFT\Online\FunctionLibraries\ReportResult.qfl"
+'LoadFunctionLibrary "P:\UFT\Online\FunctionLibraries\DB_Utilities.qfl"
+'LoadFunctionLibrary "P:\UFT\Online\FunctionLibraries\OnlineUtilities.qfl"
+'LoadFunctionLibrary "P:\UFT\Online\FunctionLibraries\MailUtilities.qfl"
+'LoadFunctionLibrary "P:\UFT\Online\FunctionLibraries\CRM_Utilities.qfl"
+fn_KillChrome
+lEnvironmentVariables()
+DataTable.ImportSheet DataSheetPath,DataSheetName,Environment("ActionName")
+iRowCount=DataTable.GetSheet(Environment("ActionName")).GetRowCount	
+OpenReport()
+For intIterator = 1 To iRowCount
+    ''DataTable.SetCurrentRow(IntI)
+    strFname=DataTable("Fname",Environment("ActionName"))
+    strLname=DataTable("Lname",Environment("ActionName"))
+    intDOB=DataTable("DOB",Environment("ActionName"))
+    strEmail=DataTable("Email",Environment("ActionName"))
+    strAddress=DataTable("Address",Environment("ActionName"))
+    strStreetAdrs=DataTable("Address",Environment("ActionName"))
+    varZipCode=DataTable("ZipCode",Environment("ActionName"))
+    strProvince=DataTable("Province",Environment("ActionName"))
+    intBrnchTrnstNum=DataTable("BnkTransitNum",Environment("ActionName"))
+    intFinInstitutinNum=DataTable("FinIntstnNum",Environment("ActionName"))
+    strNewPwd=DataTable("Password",Environment("ActionName"))
+     intPostalCode=DataTable("ZipCode",Environment("ActionName"))
+     strUname="crmqa@moneymart.onmicrosoft.com"
+	strPawd="Happyhour2019"
+    'launch app
+    retval=fn_QAMMLaunch 
+    If retval=False Then
+    'DataTable.SetCurrentRow(Environment("DataTable_Row"))
+		DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+		'DataTable.SetCurrentRow(IntI)
+		DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+'		datatable.SetNextRow
+		DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+		ExitActionIteration
+		else
+		retval= fn_ClickILLoan()			
+	End If
+       
+    'Browser("Money Mart: Consumer Loans").Page("Money Mart: Consumer Loans").Link("Apply Now").WaitProperty  "visible","-1"
+     
+		If retval=False Then
+		'DataTable.SetCurrentRow(Environment("DataTable_Row"))
+		DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+		'DataTable.SetCurrentRow(IntI)
+		DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+		DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+		ExitActionIteration
+		else
+		'filling out personal information
+		retval=fn_PersonalInfo(strFname,strLname,strEmail,strStreetAdrs,strProvince,intPostalCode,intDOB)
+		End If
+     	
+    	  	
+    If retval=False Then
+		DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+		DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+		DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+		ExitActionIteration
+	else
+		retval=fn_IncomeDetails
+	End If
+    If retval=False Then
+		DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+		DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+		DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+		ExitActionIteration
+	else
+			retval=fn_Submit
+	End If     
+     intcounter=1
+    Do 
+	wait 1
+	intcounter=intcounter+1
+	If intcounter>40 Then
+		Exit do
+	End If
+	Loop Until Browser("InstallmentLoan").Page("Money Mart: Online Installment").WebElement("Congratulations!").Exist=true or Browser("InstallmentLoan").Page("DenialApproval").WebElement("Cost of Borrowing").Exist=true or Browser("InstallmentLoan").Page("DenialApproval").WebElement("Thank You for your Application").Exist=true
+''GDS part end
+boolretval=fn_boolCrossSell
+    If boolretval=false Then 	
+    
+    	If retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_ClickMyAccount
+		End If 
+    	
+    	If retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval= fn_MMLogout
+		End If
+     	
+    '*****************************************************************************************************************
+    '*******************************************************************************************************************
+    '                              TILL uPDATE PASSWORD TESTDATA PREPARATION
+    '*******************************************************************************************************************
+	'################################ACTUAL TEST CASE STARTS###########################################################
+    	
+		'************************************************update siva
+		
+		
+		If retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_LaunchYopEmail
+		End If
+		
+		If retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_YopMail_gotoInbox(strEmail)
+		End If
+    
+    	If retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval= fn_Click_CheckforNewEmails
+		End If
+		
+		strYopDetails=fn_RetrievePswd_Email()
+		strUnamefromYop=strYopDetails(0)
+		strPswdfromYop=strYopDetails(1)
+		Browser("YOPmail - Inbox").Close	
+		wait 2
+
+
+
+    	If retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_MMLogin(trim(strUnamefromYop),trim(strPswdfromYop))
+		End If
+		
+		
+    	if retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_UpdatePaswd(trim(strNewPwd))
+		End If
+
+		if retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_ClickOK_AftrPwdUpdate
+		End If
+		
+		if retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_MMLogin(trim(strUnamefromYop),trim(strNewPwd))  
+		End If
+		
+		
+		
+	'	****************************************
+		
+		
+		
+		
+		
+		
+		
+		
+    	if retval=False Then 	
+    	
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_Click_ApplyForInstallmentLoan'fn_ClickMyLoan
+		End If
+    	Browser("Money Mart: Consumer Loans").Page("Money Mart: Online Installment").Sync
+		Browser("Money Mart: Consumer Loans").Page("Money Mart: Online Installment").Link("1 Your Personal InformationRev").WaitProperty "visible","-1"
+    	if retval=False Then
+    	
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_ExistCustMandateDetailsSet'fn_ClickClose_DocsUploadReminder
+		End If
+    	fn_TransUnion(fn_DB_RetrieveCustID(strFname,strLname))
+    	if retval=False Then
+    	
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_IncomeDetails
+		End If
+		if retval=False Then
+		
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_Submit
+		End If
+	
+		Do 
+		wait 1
+		intcounter=intcounter+1
+		If intcounter>15 Then
+			Exit do
+		End If
+		Loop Until Browser("InstallmentLoan").Page("Money Mart: Online Installment").WebElement("Congratulations!").Exist=true or Browser("Money Mart: Consumer Loans").Page("DenialApproval").WebElement("Cost of Borrowing").Exist=true 
+    	if retval=False Then
+    	
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_SelectLoanDuration
+		End If
+		 wait 5
+    	intAPR_UI=fn_GetAPRRate
+    	
+    	If retval=False Then
+    		DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_ClickForNotice(intAPR_UI)
+		End If 
+		If retval=False Then
+		
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval= fn_ClickOnContinue
+		End if
+		
+		
+		
+		
+		If retval=False Then
+		
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval= fn_Click_EFT
+		End If
+    	If retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")			
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_ProvideBankDetails(intBrnchTrnstNum,intFinInstitutinNum)
+		End If
+		If retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_ClickCallMe
+		
+		End If
+    	If retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_ClickOK_4DigitCode
+		End If
+    	If retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_SignAgreements
+		End If
+    	if retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_SkipDocsUpload
+		End If
+    	if retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_ClickMyLoan
+		End If
+    	if retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_ClickClose_DocsUploadReminder
+		End If
+    	varLoanInfo=fn_RetrieveLaonInfo()
+		intLoanNumber=varLoanInfo(0)
+		strLoanstatus=varLoanInfo(1)
+		'write LoanID to datatable
+		DataTable.Value("LoanID",Environment("ActionName"))=intLoanNumber
+		Browser("Money Mart: Consumer Loans").Page("Welcome | Money Mart").Link("My Account").WaitProperty "visible","-1"
+		if retval=False Then
+		'DataTable.SetCurrentRow(Environment("DataTable_Row"))
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			'DataTable.SetCurrentRow(IntI)
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_MyaccountClick_toCheckAppStatus
+			retval=true
+		End If		
+	
+		'***************************** CRM ******************************************
+		if retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fnCRMLaunch
+		End If
+		
+		if retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fnCRMLogin(strUname,trim(strPawd))
+		End If
+		
+		if retval=False Then
+	     	DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_StaySigndIn
+		End If
+		if retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_SearchClick(intLoanNumber)
+		End If
+		if retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			retval=fn_CRMLogout
+			ExitActionIteration
+		else
+			retval=fn_ClickonLoan_CRM 
+		End If
+		if retval=False Then				
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_VerifyDocs_CRM(intLoanNumber)
+		End If
+		if retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			retval=fn_CRMLogout
+			ExitActionIteration
+		else
+			retval=fn_ClickonLoanAftrApprove_CRM 
+		End If
+		
+		if retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_SPL_CheckStatusinCRM("Active")
+		End If
+	
+		if retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_CRMLogout
+		End If
+		
+		if retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+		else
+		Browser("InstallmentLoan").Refresh
+		wait 10
+	
+			if Browser("InstallmentLoan").Page("Welcome | Money Mart").WebElement("Almost Finished!").Exist(60) then 
+				retval=fn_ClickClose_DocsUploadReminder
+			End If
+			Browser("InstallmentLoan").Refresh
+			wait 5
+			if Browser("InstallmentLoan").Page("Welcome | Money Mart").WebElement("Almost Finished!").Exist(60) then 
+				retval=fn_ClickClose_DocsUploadReminder
+			End If
+		End If
+
+		if retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			intcounter1=1
+			Do 
+				 Browser("InstallmentLoan").Refresh
+				wait 2
+				intcounter1=intcounter1+1
+				If intcounter1>10 Then
+				Exit do
+				End If
+		Loop Until Browser("InstallmentLoan").Page("Welcome | Money Mart").WebElement("xpath:=//DIV[10]/DIV[11]/DIV[2]/DIV[1]/DIV[1]/TABLE[1]/TBODY[1]/TR[1]/TD[5]").exist(2)=true
+
+		retval=fn_LoanStatusAftrAprveinCRM1("Funded")
+
+		End If
+		
+		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		'             DB
+If retval=False Then
+    	DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+		DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+		DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+		ExitActionIteration
+		else
+		retval= fn_DB_LoanNoteTableInfo_TOExcel(intLoanNumber)
+End If
+
+
+'LoanDocument Table (Tila Document)
+If retval=False Then
+    	DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+		DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+		DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+		ExitActionIteration
+		else
+		strQuery="SELECT * FROM [VitaPDLCANOnline].[dbo].[LoanDocument] where LoanId="&intLoanNumber
+			retval=fn_DB_LoanDocumentTableInfo_TOExcel(strQuery)	
+End If
+	
+	
+		If retval=False Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		else
+			retval=fn_DB_LoanStatusID(intLoanNumber)
+		End If		
+		
+		
+		If retval="3" Then
+			DataTable.Value("Result",dtGlobalsheet) =ucase("PASS")
+			DataTable.Value("Result",dtlocalsheet) =ucase("PASS")
+			ReportGen_Status "Loan_Status",Environment("ActionName"),"","Loan_Status is displayed as "&retval,"Pass"
+			Reporter.ReportEvent micPass,"Loan_Status is displayed as "&retval,"pass"
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			
+		else
+			
+'			ExitActionIteration
+			DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+			DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+			ReportGen_Status "Loan_Status",Environment("ActionName"),"","Loan_Status is displayed as "&retval,"Fail"
+			Reporter.ReportEvent micPass,"Loan_Status is displayed as "&retval,"Fail"
+			DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+			ExitActionIteration
+		End If
+
+    else
+
+    	DataTable.Value("Result",dtGlobalsheet) =ucase("Fail")
+		DataTable.Value("Result",dtlocalsheet) =ucase("Fail")
+		DataTable.ExportSheet DataSheetPath,Environment("ActionName"),DataSheetName
+		ExitActionIteration
+    End If
+
+ 	fn_KillChrome
+    
+    DataTable.SetNextRow
+	
+    
+next
+RepositoriesCollection.RemoveAll
+fn_KillChrome
+
+
+
+
+
+
+ 
+
+
+
+
+
